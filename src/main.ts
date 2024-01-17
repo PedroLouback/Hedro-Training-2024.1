@@ -1,48 +1,46 @@
-const TEMP_MIN = 10;
-const TEMP_MAX = 15;
+import { HumidityRandomGenerator } from './infra/humidityRandomGenerator'
+import { LoggerInitializer } from './infra/logger'
+import { Messaging } from './infra/messaging'
+import { TempRandomGenerator } from './infra/tempRandomGenerator'
+import { HumidityGeneratorService } from './services/humidity'
+import { type IMessaging, type IRandomGenerator } from './services/interfaces'
+import { TempGeneratorService } from './services/temp'
+import dotenv from 'dotenv'
 
-const HUMIDITY_MIN = 0.3;
-const HUMIDITY_MAX = 0.8;
+function main () {
+  const { logger, tempRandom, humidityRandom, messaging } = setup()
 
-const INTERVAL_TIMEOUT = 1000;
+  startup(tempRandom, humidityRandom, messaging)
 
-function random(min: number, max: number): number {
-    return Math.floor(Math.random() * (max - min)) + min 
+  logger.info('application running')
 }
 
-type DeviceData = {
-    device: string,
-    value: string,
-    type: "TEMP" | "HUMIDITY"
+function setup () {
+  dotenv.config()
+
+  const logger = new LoggerInitializer().init()
+
+  logger.info('starting application..')
+
+  const messaging = new Messaging(logger)
+  messaging.connect()
+  const tempRandom = new TempRandomGenerator(logger)
+  const humidityRandom = new HumidityRandomGenerator(logger)
+
+  return {
+    logger,
+    messaging,
+    tempRandom,
+    humidityRandom
+  }
 }
 
-function tempGenerator(): DeviceData {
-    const value = random(TEMP_MIN, TEMP_MAX)
+function startup (tempRandom: IRandomGenerator, humidityRandom: IRandomGenerator, messaging: IMessaging) {
+  const tempGeneratorService = new TempGeneratorService(tempRandom, messaging)
+  const humidityRandomService = new HumidityGeneratorService(humidityRandom, messaging)
 
-    return {
-        device: "device",
-        value: String(value),
-        type: "TEMP"
-    }
-}
-
-function humidityGenerator(): DeviceData {
-    const value = random(HUMIDITY_MIN, HUMIDITY_MAX)
-
-    return {
-        device: "device",
-        value: String(value),
-        type: "HUMIDITY"
-    }
-}
-
-function main() : void {
-    
-    setInterval(() => {
-        console.log(tempGenerator())
-        console.log(humidityGenerator())
-    }, INTERVAL_TIMEOUT)
-
+  tempGeneratorService.do()
+  humidityRandomService.do()
 }
 
 main()
