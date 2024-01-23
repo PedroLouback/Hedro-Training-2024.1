@@ -8,7 +8,8 @@ const pino_1 = __importDefault(require("pino"));
 class LoggerInitializer {
     init() {
         return (0, pino_1.default)({
-            level: 'debug'
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+            level: process.env.LOG_LEVEL || 'debug'
         });
     }
 }
