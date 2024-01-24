@@ -84,7 +84,7 @@ impl MQTTMessaging {
         let mut stream = client.get_stream(2048);
 
         while let Some(opt_infos) = stream.next().await {
-            self.handler(opt_infos);
+            let _handler = self.handler(opt_infos);
         }
 
         Ok(())
@@ -94,7 +94,7 @@ impl MQTTMessaging {
         self.subscribes.push((topic, qos))
     }
 
-    fn handler(&self, infos: Option<Message>) {
+    async fn handler(&self, infos: Option<Message>) {
         let Some(message) = infos else {
             return;
         };
@@ -106,7 +106,7 @@ impl MQTTMessaging {
             return;
         };
 
-        match self.service.exec(&msg) {
+        match self.service.exec(&msg).await {
             Ok(_) => {
                 info!("message processed succeessfully!");
             }

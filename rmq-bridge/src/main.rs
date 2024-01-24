@@ -3,7 +3,10 @@ mod services;
 
 use log::info;
 
-use crate::{infra::mqtt_messaging::MQTTMessaging, services::service::BridgeServiceImpl};
+use crate::{
+    infra::{mqtt_messaging::MQTTMessaging, rmq_messaging::RabbitMQMessaging},
+    services::service::BridgeServiceImpl,
+};
 
 #[tokio::main]
 async fn main() {
@@ -12,12 +15,16 @@ async fn main() {
 
     info!("starting application...");
 
-    let service = BridgeServiceImpl::new();
-    let mut messaging = MQTTMessaging::new(Box::new(service));
+    let mut rmq_messaging = RabbitMQMessaging::new();
+    let _connect = rmq_messaging.connect().await;
 
-    messaging.subscribe("HedroTraining2024/#".into(), 2);
+    let service = BridgeServiceImpl::new(Box::new(rmq_messaging));
 
-    messaging
+    let mut mqqt_messaging = MQTTMessaging::new(Box::new(service));
+
+    mqqt_messaging.subscribe("HedroTraining2024/#".into(), 2);
+
+    mqqt_messaging
         .connect()
         .await
         .expect("failure to connect to MQTT");
