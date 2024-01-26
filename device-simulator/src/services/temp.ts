@@ -21,7 +21,7 @@ export class TempGeneratorService {
       const random = this.randomGenerator.generate()
 
       const data: DeviceData = {
-        device: 'random',
+        device: 'H1.2',
         type: 'TEMP',
         value: String(random)
       }

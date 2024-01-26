@@ -18,9 +18,43 @@ services:
       - 8883:8883
       - 8083:8083
       - 18083:18083
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      - 15672:15672 # porta da dashboard web -> localhost:15672
+      - 5672:5672 # porta do broker
+      - 15692:15692
+    networks:
+      - my-network
+
+  rmq-bridge:
+    image: rmq-bridge
+    container_name: rmq-bridge
+    networks:
+      - my-network
+    environment:
+      - RUST_LOG=debug
+
+      - MQTT_HOST=localhost
+      - MQTT_PROTOCOL=tcp
+      - MQTT_PORT=1883
+      - MQTT_CLIENT_ID=mqtt-explorer-1234
+      - MQTT_USERNAME=user
+      - MQTT_PASSWORD=user
+
+      - RABBITMQ_HOST=localhost
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+
   device-simulator:
     image: device-simulator
-    container_name: my_device_simulator
+    container_name: device-simulator
     networks:
       - my-network
     environment:

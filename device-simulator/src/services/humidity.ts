@@ -21,7 +21,7 @@ export class HumidityGeneratorService {
       const random = this.randomGenerator.generate()
 
       const data: DeviceData = {
-        device: 'random',
+        device: 'H1.2',
         type: 'HUMIDITY',
         value: String(random)
       }

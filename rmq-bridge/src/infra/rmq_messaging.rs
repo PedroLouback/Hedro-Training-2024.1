@@ -1,10 +1,12 @@
 use crate::services::service::Messaging;
-use lapin::{BasicProperties, Channel, Connection, ConnectionProperties};
+use async_trait::async_trait;
+use lapin::{
+    options::{ExchangeDeclareOptions, QueueBindOptions, QueueDeclareOptions},
+    types::FieldTable,
+    BasicProperties, Channel, Connection, ConnectionProperties,
+};
 use log::{error, info};
 use std::env;
-use async_trait::async_trait;
-
-
 
 struct RabbitMQConfigs {
     host: String,
@@ -35,7 +37,8 @@ impl Messaging for RabbitMQMessaging {
             return Err(());
         }
 
-        match self.channel
+        match self
+            .channel
             .clone()
             .unwrap()
             .basic_publish(
@@ -49,16 +52,16 @@ impl Messaging for RabbitMQMessaging {
                 BasicProperties::default(),
             )
             .await
-            {
-                Ok(_) => {
-                    info!("published to rqm");
-                    Ok(())
-                }
-                Err(_) => {
-                    error!("failed to publish msg to rmq");
-                    Err(())
-                }
+        {
+            Ok(_) => {
+                info!("published to rqm");
+                Ok(())
             }
+            Err(_) => {
+                error!("failed to publish msg to rmq");
+                Err(())
+            }
+        }
     }
 }
 
@@ -117,6 +120,51 @@ impl RabbitMQMessaging {
         };
 
         info!("rabbitmq channel created! ");
+
+        let Ok(_exchange) = channel
+            .exchange_declare(
+                "test",
+                lapin::ExchangeKind::Fanout,
+                ExchangeDeclareOptions::default(),
+                FieldTable::default(),
+            )
+            .await
+        else {
+            error!("rabbitmq exchange failure");
+            return Err(());
+        };
+
+        info!("rabbitmq exchange created! ");
+
+        let Ok(_queue) = channel
+            .queue_declare(
+                "batatinha",
+                QueueDeclareOptions::default(),
+                FieldTable::default(),
+            )
+            .await
+        else {
+            error!("rabbitmq queue failure");
+            return Err(());
+        };
+
+        info!("rabbitmq queue created! ",);
+
+        let Ok(_queue_bind) = channel
+            .queue_bind(
+                "batatinha",
+                "test",
+                "",
+                QueueBindOptions::default(),
+                FieldTable::default(),
+            )
+            .await
+        else {
+            error!("rabbitmq queue bind failure");
+            return Err(());
+        };
+
+        info!("rabbitmq queue bind created! ",);
 
         self.conn = Some(conn);
         self.channel = Some(channel);
