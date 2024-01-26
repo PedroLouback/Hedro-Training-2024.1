@@ -10,8 +10,6 @@ struct MQTTConfigs {
     host: String,
     port: String,
     client_id: String,
-    username: String,
-    password: String,
 }
 
 pub struct MQTTMessaging {
@@ -50,23 +48,11 @@ impl MQTTMessaging {
             return Err(());
         };
 
-        let Ok(username) = var("MQTT_USERNAME") else {
-            error!("failure to read the MQTT_USERNAME env");
-            return Err(());
-        };
-
-        let Ok(password) = var("MQTT_PASSWORD") else {
-            error!("failure to read the MQTT_PASSWORD env");
-            return Err(());
-        };
-
         Ok(MQTTConfigs {
             client_id,
             host,
             port,
             protocol,
-            username,
-            password,
         })
     }
 
@@ -83,10 +69,7 @@ impl MQTTMessaging {
             return Err(());
         };
 
-        let conn_opts = ConnectOptionsBuilder::new()
-            .user_name(env.username)
-            .password(env.password)
-            .finalize();
+        let conn_opts = ConnectOptionsBuilder::new().finalize();
 
         let Ok(_) = client.connect(Some(conn_opts)).await else {
             error!("failure to connect to MQTT");
@@ -98,16 +81,15 @@ impl MQTTMessaging {
         }
 
         let mut stream = client.get_stream(2048);
-
         while let Some(opt_infos) = stream.next().await {
-            let _handler = self.handler(opt_infos);
+            self.handler(opt_infos).await;
         }
 
         Ok(())
     }
 
     pub fn subscribe(&mut self, topic: String, qos: u8) {
-        self.subscribes.push((topic, qos))
+        self.subscribes.push((topic, qos));
     }
 
     async fn handler(&self, infos: Option<Message>) {
@@ -124,9 +106,9 @@ impl MQTTMessaging {
 
         match self.service.exec(&msg).await {
             Ok(_) => {
-                info!("message processed succeessfully!");
+                info!("message processed successfully!")
             }
             Err(_) => error!("failed to process message"),
-        };
+        }
     }
 }
