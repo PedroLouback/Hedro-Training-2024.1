@@ -10,6 +10,8 @@ struct MQTTConfigs {
     host: String,
     port: String,
     client_id: String,
+    username: String,
+    password: String,
 }
 
 pub struct MQTTMessaging {
@@ -48,11 +50,23 @@ impl MQTTMessaging {
             return Err(());
         };
 
+        let Ok(username) = var("MQTT_USERNAME") else {
+            error!("failure to read the MQTT_USERNAME env");
+            return Err(());
+        };
+
+        let Ok(password) = var("MQTT_PASSWORD") else {
+            error!("failure to read the MQTT_PASSWORD env");
+            return Err(());
+        };
+
         Ok(MQTTConfigs {
             client_id,
             host,
             port,
             protocol,
+            username,
+            password,
         })
     }
 
@@ -69,7 +83,10 @@ impl MQTTMessaging {
             return Err(());
         };
 
-        let conn_opts = ConnectOptionsBuilder::new().finalize();
+        let conn_opts = ConnectOptionsBuilder::new()
+            .user_name(env.username)
+            .password(env.password)
+            .finalize();
 
         let Ok(_) = client.connect(Some(conn_opts)).await else {
             error!("failure to connect to MQTT");

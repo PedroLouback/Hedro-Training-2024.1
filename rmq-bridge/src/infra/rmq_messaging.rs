@@ -1,6 +1,10 @@
 use crate::services::service::Messaging;
 use async_trait::async_trait;
-use lapin::{BasicProperties, Channel, Connection, ConnectionProperties};
+use lapin::{
+    options::{ExchangeDeclareOptions, QueueBindOptions, QueueDeclareOptions},
+    types::FieldTable,
+    BasicProperties, Channel, Connection, ConnectionProperties,
+};
 use log::{error, info};
 use std::env;
 
@@ -109,6 +113,51 @@ impl RabbitMQConnection {
         };
 
         info!("rabbitmq channel created!");
+
+        let Ok(_exchange) = channel
+            .exchange_declare(
+                "test",
+                lapin::ExchangeKind::Fanout,
+                ExchangeDeclareOptions::default(),
+                FieldTable::default(),
+            )
+            .await
+        else {
+            error!("rabbitmq exchange failure");
+            return Err(());
+        };
+
+        info!("rabbitmq exchange created! ");
+
+        let Ok(_queue) = channel
+            .queue_declare(
+                "batatinha",
+                QueueDeclareOptions::default(),
+                FieldTable::default(),
+            )
+            .await
+        else {
+            error!("rabbitmq queue failure");
+            return Err(());
+        };
+
+        info!("rabbitmq queue created! ",);
+
+        let Ok(_queue_bind) = channel
+            .queue_bind(
+                "batatinha",
+                "test",
+                "",
+                QueueBindOptions::default(),
+                FieldTable::default(),
+            )
+            .await
+        else {
+            error!("rabbitmq queue bind failure");
+            return Err(());
+        };
+
+        info!("rabbitmq queue bind created! ",);
 
         Ok((conn, channel))
     }
