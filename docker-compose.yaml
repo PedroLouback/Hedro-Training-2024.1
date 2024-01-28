@@ -32,25 +32,25 @@ services:
     networks:
       - my-network
 
-  rmq-bridge:
-    image: rmq-bridge
-    container_name: rmq-bridge
-    networks:
-      - my-network
-    environment:
-      - RUST_LOG=debug
+  # rmq-bridge:
+  #   image: rmq-bridge
+  #   container_name: rmq-bridge
+  #   networks:
+  #     - my-network
+  #   environment:
+  #     - RUST_LOG=debug
 
-      - MQTT_HOST=localhost
-      - MQTT_PROTOCOL=tcp
-      - MQTT_PORT=1883
-      - MQTT_CLIENT_ID=mqtt-explorer-1234
-      - MQTT_USERNAME=user
-      - MQTT_PASSWORD=user
+  #     - MQTT_HOST=localhost
+  #     - MQTT_PROTOCOL=tcp
+  #     - MQTT_PORT=1883
+  #     - MQTT_CLIENT_ID=mqtt-explorer-1234
+  #     - MQTT_USERNAME=user
+  #     - MQTT_PASSWORD=user
 
-      - RABBITMQ_HOST=localhost
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USER=guest
-      - RABBITMQ_PASSWORD=guest
+  #     - RABBITMQ_HOST=localhost
+  #     - RABBITMQ_PORT=5672
+  #     - RABBITMQ_USER=guest
+  #     - RABBITMQ_PASSWORD=guest
 
   device-simulator:
     image: device-simulator

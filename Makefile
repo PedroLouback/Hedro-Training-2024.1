@@ -1,8 +1,14 @@
 dev-simulator-run:
 	cd device-simulator && yarn start
 
-rmq-build:
+bridge-build:
 	cd rmq-bridge && cargo build
 
-rmq-run:
+bridge-run:
 	cd rmq-bridge && cargo run
+
+consumer-build:
+	cd rmq-consumer && cargo build
+
+consumer-run:
+	cd rmq-consumer && cargo run
