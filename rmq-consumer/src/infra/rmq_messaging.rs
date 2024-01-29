@@ -1,4 +1,6 @@
+use crate::services::messages::RMQMessage;
 use futures_util::StreamExt;
+use lapin::message::Delivery;
 use lapin::{
     options::{
         BasicAckOptions, BasicConsumeOptions, ExchangeDeclareOptions, QueueBindOptions,
@@ -139,18 +141,23 @@ impl RMQConnection {
             .await
             .expect("Failure to create consumer");
 
-        while let Some(event) = consumer.next().await {
-            let Ok(delivery) = event else {
-                error!("Error to receive RabbitMQ Message!");
-                continue;
+        while let Some(event_result) = consumer.next().await {
+            let event = match event_result {
+                Ok(event) => event,
+                Err(err) => {
+                    error!("Error receiving message from RabbitMQ: {:?}", err);
+                    continue;
+                }
             };
-            let data = delivery.data;
-            info!("Message received: {:?}", data);
+
+            let delivery_tag = event.delivery_tag;
+
+            self.handler(Ok(event)).await;
 
             info!("Message processed successfully!");
 
             let Ok(_ack) = channel
-                .basic_ack(delivery.delivery_tag, BasicAckOptions::default())
+                .basic_ack(delivery_tag, BasicAckOptions::default())
                 .await
             else {
                 error!("Acknowledge the message failure!");
@@ -159,5 +166,24 @@ impl RMQConnection {
         }
 
         Ok((conn, channel))
+    }
+
+    async fn handler(&self, event: Result<Delivery, lapin::Error>) {
+        let delivery = match event {
+            Ok(delivery) => delivery,
+            Err(_) => {
+                error!("Error receiving message from RabbitMQ");
+                return;
+            }
+        };
+
+        let data = delivery.data;
+
+        let Ok(msg) = serde_json::from_slice::<RMQMessage>(&*data) else {
+            error!("Failed to deserialized message!");
+            return;
+        };
+
+        info!("Receiving message successfully: {:?}", msg);
     }
 }
