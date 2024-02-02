@@ -1,4 +1,5 @@
 use crate::services::messages::RMQMessage;
+use crate::services::service::BridgeService;
 use futures_util::StreamExt;
 use lapin::message::Delivery;
 use lapin::{
@@ -11,7 +12,6 @@ use lapin::{
 };
 use log::{error, info};
 use std::env;
-
 struct RMQConfigs {
     host: String,
     port: String,
@@ -21,11 +21,13 @@ struct RMQConfigs {
     exchange: String,
 }
 
-pub struct RMQConnection {}
+pub struct RMQConnection {
+    service: Box<dyn BridgeService>,
+}
 
 impl RMQConnection {
-    pub fn new() -> Self {
-        return RMQConnection {};
+    pub fn new(service: Box<dyn BridgeService>) -> Self {
+        RMQConnection { service }
     }
     fn envs(&self) -> Result<RMQConfigs, ()> {
         let Ok(host) = env::var("RABBITMQ_HOST") else {
@@ -154,8 +156,6 @@ impl RMQConnection {
 
             self.handler(Ok(event)).await;
 
-            info!("Message processed successfully!");
-
             let Ok(_ack) = channel
                 .basic_ack(delivery_tag, BasicAckOptions::default())
                 .await
@@ -185,5 +185,14 @@ impl RMQConnection {
         };
 
         info!("Receiving message successfully: {:?}", msg);
+
+        match self.service.exec(&msg) {
+            Ok(_) => {
+                info!("Message processed successfully");
+            }
+            Err(_) => {
+                error!("Failed to process message");
+            }
+        }
     }
 }

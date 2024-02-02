@@ -17,4 +17,4 @@ WORKDIR /app
 COPY .env ./
 COPY --from=build /build/target/release/rmq-bridge ./
 
-CMD ["./rmq-bridge"]
+CMD ["sh", "-c", "./rmq-bridge"]

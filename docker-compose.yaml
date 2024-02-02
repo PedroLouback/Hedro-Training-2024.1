@@ -32,6 +32,15 @@ services:
     networks:
       - my-network
 
+  device-simulator:
+    image: device-simulator
+    container_name: device-simulator
+    networks:
+      - my-network
+    environment:
+      - MQTT_HOST=emqx:1883
+      - MQTT_PROTOCOL=tcp
+
   # rmq-bridge:
   #   image: rmq-bridge
   #   container_name: rmq-bridge
@@ -51,15 +60,6 @@ services:
   #     - RABBITMQ_PORT=5672
   #     - RABBITMQ_USER=guest
   #     - RABBITMQ_PASSWORD=guest
-
-  device-simulator:
-    image: device-simulator
-    container_name: device-simulator
-    networks:
-      - my-network
-    environment:
-      - MQTT_HOST=emqx:1883
-      - MQTT_PROTOCOL=tcp
 
 networks:
   my-network:

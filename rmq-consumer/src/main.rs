@@ -1,6 +1,6 @@
 use log::info;
 
-use crate::infra::rmq_messaging::RMQConnection;
+use crate::{infra::rmq_messaging::RMQConnection, services::service::BridgeServiceImpl};
 
 mod infra;
 mod services;
@@ -12,7 +12,11 @@ async fn main() {
 
     info!("Starting consumer application...");
 
-    let (rmq_conn, rmq_channel) = RMQConnection::new()
+    let service = BridgeServiceImpl::new();
+
+    let mut consumer = RMQConnection::new(Box::new(service));
+
+    consumer
         .connect()
         .await
         .expect("RabbitMQ connection failure!");
