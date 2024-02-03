@@ -18,13 +18,16 @@ struct RabbitMQConfigs {
 pub struct RabbitMQConnection {}
 
 pub struct RabbitMQMessaging {
-    conn: Connection,
+    _conn: Connection,
     channel: Channel,
 }
 
 impl RabbitMQMessaging {
     pub fn new(conn: Connection, channel: Channel) -> Self {
-        RabbitMQMessaging { conn, channel }
+        RabbitMQMessaging {
+            _conn: conn,
+            channel,
+        }
     }
 }
 

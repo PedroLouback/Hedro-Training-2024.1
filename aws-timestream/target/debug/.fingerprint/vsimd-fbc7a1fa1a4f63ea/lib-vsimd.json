@@ -1,1 +1,0 @@
-{"rustc":2497478894085024098,"features":"[\"alloc\", \"detect\", \"std\"]","target":11927554809169030450,"profile":10243973527296709326,"path":7278610531136895755,"deps":[],"local":[{"CheckDepInfo":{"dep_info":"debug/.fingerprint/vsimd-fbc7a1fa1a4f63ea/dep-lib-vsimd"}}],"rustflags":[],"metadata":1789879796107185278,"config":2202906307356721367,"compile_kind":0}

@@ -21,5 +21,8 @@ async fn main() {
         .await
         .expect("RabbitMQ connection failure!");
 
+    
+
+
     info!("RabbitMQ connected!");
 }

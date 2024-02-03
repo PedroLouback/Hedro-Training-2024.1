@@ -1,3 +1,4 @@
+use crate::infra::aws_timestream::AWSTimestreamConnection;
 use crate::services::messages::RMQMessage;
 use crate::services::service::BridgeService;
 use futures_util::StreamExt;
@@ -194,5 +195,13 @@ impl RMQConnection {
                 error!("Failed to process message");
             }
         }
+
+        let mut aws_message_sender = AWSTimestreamConnection::new(msg);
+
+        aws_message_sender
+            .connect()
+            .await
+            .expect("AWS Timestream connection failure");
+        
     }
 }
