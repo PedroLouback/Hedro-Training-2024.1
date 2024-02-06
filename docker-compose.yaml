@@ -38,53 +38,55 @@ services:
     networks:
       - my-network
     environment:
+      - LOG_LEVEL=debug
+
       - MQTT_HOST=emqx:1883
       - MQTT_PROTOCOL=tcp
       - MQTT_USERNAME=user
       - MQTT_PASSWORD=user
+      
+      - TEMP_DATA_INTERVAL=1000
+      - HUMIDITY_DATA_INTERVAL=1000
 
-  # rmq-bridge:
-  #   depends_on:
-  #     - rabbitmq
-  #   image: rmq-bridge
-  #   container_name: rmq-bridge
-  #   networks:
-  #     - my-network
-  #   environment:
-  #     - RUST_LOG=debug
-  #     - RUST_BACKTRACE=full
-  #     - MQTT_HOST=localhost
-  #     - MQTT_PROTOCOL=tcp
-  #     - MQTT_PORT=1883
-  #     - MQTT_CLIENT_ID=mqtt-explorer-1234
-  #     - MQTT_USERNAME=user
-  #     - MQTT_PASSWORD=user
-  #     - RABBITMQ_HOST=localhost
-  #     - RABBITMQ_PORT=5672
-  #     - RABBITMQ_USER=guest
-  #     - RABBITMQ_PASSWORD=guest
+  rmq-bridge:
+    image: rmq-bridge
+    container_name: rmq-bridge
+    networks:
+      - my-network
+    environment:
+      - RUST_LOG=debug
 
-  #   command: ./rmq-bridge
+      - MQTT_HOST=emqx
+      - MQTT_PROTOCOL=tcp
+      - MQTT_PORT=1883
+      - MQTT_CLIENT_ID=mqtt-explorer-1234
+      - MQTT_USERNAME=user
+      - MQTT_PASSWORD=user
 
-  # rmq-consumer:
-  #   depends_on:
-  #     - rmq-bridge
-  #   image: rmq-consumer
-  #   container_name: rmq-consumer
-  #   networks:
-  #     - my-network
-  #   environment:
-  #     - RUST_LOG=debug
-  #     - RABBITMQ_HOST=localhost
-  #     - RABBITMQ_PORT=5672
-  #     - RABBITMQ_USER=guest
-  #     - RABBITMQ_PASSWORD=guest
-  #     - RABBITMQ_QUEUE=batatinha
-  #     - RABBITMQ_EXCHANGE=test
-  #     - AWS_DATABASE_NAME=hdr-training
-  #     - AWS_TABLE_NAME=pedro
-
-  #   command: ./rmq-consumer
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+    depends_on:
+      - device-simulator
+      
+  rmq-consumer:
+    image: rmq-consumer
+    container_name: rmq-consumer
+    networks:
+      - my-network
+    environment:
+      - RUST_LOG=debug
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_QUEUE=batatinha
+      - RABBITMQ_EXCHANGE=test
+      - AWS_DATABASE_NAME=hdr-training
+      - AWS_TABLE_NAME=pedro
+    depends_on:
+      - rmq-bridge
 
 networks:
   my-network:
