@@ -75,6 +75,8 @@ services:
     container_name: rmq-consumer
     networks:
       - my-network
+    volumes:
+      - ~/.aws:/root/.aws:ro
     environment:
       - RUST_LOG=debug
       - RABBITMQ_HOST=rabbitmq

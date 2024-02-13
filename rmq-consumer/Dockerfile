@@ -10,10 +10,6 @@ FROM rust:slim-bookworm
 
 RUN apt-get update && apt-get install -y awscli
 
-RUN aws configure set aws_access_key_id xxxx && \
-    aws configure set aws_secret_access_key xxxx && \
-    aws configure set default.region xxxx
-
 WORKDIR /app
 COPY --from=build /build/.env /build/target/release/rmq-consumer /app/
 
