@@ -7,7 +7,7 @@ message ListIoTDataRequest {
 
 enum IoTDataType {
   TEMPERATURE = 0;
-  HUMIDITTY = 1;
+  HUMIDITY = 1;
 }
 
 message IoTData {
