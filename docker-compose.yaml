@@ -90,6 +90,22 @@ services:
     depends_on:
       - rmq-bridge
 
+  grpc:
+    image: grpc
+    container_name: grpc
+    networks:
+      - my-network
+    volumes:
+      - ~/.aws:/root/.aws:ro
+    ports:
+      - "50051:50051"
+    environment:
+      - RUST_LOG=debug
+      - AWS_DATABASE_NAME=hdr-training
+      - AWS_TABLE_NAME=pedro
+      - ADDRESS_HOST=0.0.0.0
+      - ADDRESS_PORT=50051
+
 networks:
   my-network:
     driver: bridge
