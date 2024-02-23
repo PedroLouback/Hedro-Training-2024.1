@@ -3,6 +3,7 @@ syntax = "proto3";
 package server;
 
 message ListIoTDataRequest {
+  string type = 1;
 }
 
 enum IoTDataType {

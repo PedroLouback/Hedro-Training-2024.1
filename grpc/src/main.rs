@@ -2,94 +2,34 @@ pub mod server {
     tonic::include_proto!("server");
 }
 
-use aws_sdk_timestreamquery::Client;
-use log::{debug, error, info};
-use std::error::Error;
+mod infra;
+mod services;
 
-use server::{
-    io_t_data_services_server::{IoTDataServices, IoTDataServicesServer}, ListIoTDataRequest, ListIoTDataResponse,
-};
+use log::info;
+use std::error::Error;
 
 use tonic::transport::Server;
 
-struct IoTDataServicesImpl {
-    client: Client,
-}
-
-impl IoTDataServicesImpl {
-    pub fn new(client: Client) -> Self {
-        Self { client }
-    }
-}
-
-#[tonic::async_trait]
-impl IoTDataServices for IoTDataServicesImpl {
-    async fn list_io_t_data(
-        &self,
-        _request: tonic::Request<ListIoTDataRequest>,
-    ) -> Result<tonic::Response<ListIoTDataResponse>, tonic::Status> {
-
-        debug!("list_io_t_data function called");
-
-        //realizar a consulta no timestrem
-
-        let response = match self
-            .client
-            .query()
-            .query_string("SELECT * FROM hdr-training.pedro")
-            .send()
-            .await
-        {
-            Ok(response) => response,
-            Err(err) => {
-                info!("Erro ao executar a consulta: {:?}", err);
-                return Err(tonic::Status::internal("Falha ao executar a consulta"));
-            }
-        };
-
-        debug!("Timestream query executed successfully");
-
-
-        // converter o dado obtido no timestream para o tipo criado no protofile IoTData, e adicionar esses valores em um vetor
-        for row in response.rows {
-            let data = row.data;
-            debug!("Column 1: {:?}", data[0]);
-        }
-
-        debug!("Timestream data processed successfully");
-
-        // retornar o vetor
-
-        //self.client.query().........
-        //conversao do dado
-        //
-        Ok(tonic::Response::new(ListIoTDataResponse { data: vec![] }))
-    }
-}
+use crate::{
+    infra::aws_timestream::AWSConnection, server::io_t_data_services_server::IoTDataServicesServer, services::data_services::IoTDataServicesImpl
+};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    dotenvy::dotenv().expect("failure to read .env");
+    env_logger::init();
+
     let addr = "0.0.0.0:50051".parse()?;
 
-    println!("Starting gRPC server");
+    info!("Starting gRPC server");
 
-    //fazemos a conexao com o timestrem, usando o sdk da aws na crate timestreamquery;
-    let config = aws_config::load_from_env().await;
-
-    let client = match aws_sdk_timestreamquery::Client::new(&config)
-        .with_endpoint_discovery_enabled()
+    let mut aws_connection = AWSConnection::new();
+    aws_connection
+        .connect()
         .await
-    {
-        Ok((c, _)) => Ok(c),
-        Err(err) => {
-            error!("Failure to connect");
-            Err(err)
-        }
-    }?;
+        .expect("Failure to connect in AWS Timestream");
 
-    println!("Connected to Timestream");
-
-    let service = IoTDataServicesImpl::new(client);
+    let service = IoTDataServicesImpl::new(aws_connection);
 
     Server::builder()
         .add_service(IoTDataServicesServer::new(service))

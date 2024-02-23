@@ -2,4 +2,3 @@ device-simulator/node_modules
 rmq-bridge/target
 rmq-consumer/target
 grpc/target
-.idea
