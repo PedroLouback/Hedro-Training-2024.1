@@ -1,8 +1,12 @@
-pub mod server {
-    tonic::include_proto!("server");
+struct AWSConfigs {
+    database: String,
+    table: String,
 }
 
+use std::env;
+
 use aws_sdk_timestreamquery::types::Row;
+use log::error;
 use serde_json::to_string;
 use tonic::{Request, Response};
 
@@ -22,6 +26,20 @@ impl IoTDataServicesImpl {
     pub fn new(client: AWSConnection) -> Self {
         Self { client }
     }
+
+    fn envs(&self) -> Result<AWSConfigs, ()> {
+        let Ok(database) = env::var("AWS_DATABASE_NAME") else {
+            error!("Failed to read AWS_DATABASE_NAME env");
+            return Err(());
+        };
+
+        let Ok(table) = env::var("AWS_TABLE_NAME") else {
+            error!("Failed to read AWS_TABLE_NAME env");
+            return Err(());
+        };
+
+        Ok(AWSConfigs { database, table })
+    }
 }
 
 #[tonic::async_trait]
@@ -30,20 +48,28 @@ impl IoTDataServices for IoTDataServicesImpl {
         &self,
         request: Request<ListIoTDataRequest>,
     ) -> Result<Response<ListIoTDataResponse>, tonic::Status> {
+        let env = self.envs().expect("Failed to read .env");
+
         let request_type = request.into_inner().r#type;
 
         let query_string = match request_type.as_str() {
-            "HUMIDITY" => "SELECT * FROM \"hdr-training\".pedro WHERE HUMIDITY IS NOT NULL",
-            "TEMPERATURE" => "SELECT * FROM \"hdr-training\".pedro WHERE TEMP IS NOT NULL",
-            "" => "SELECT * FROM \"hdr-training\".pedro",
-            _ => "SELECT * FROM \"hdr-training\".pedro",
+            "HUMIDITY" => format!(
+                "SELECT * FROM \"{}\".{} WHERE HUMIDITY IS NOT NULL",
+                env.database, env.table
+            ),
+            "TEMPERATURE" => format!(
+                "SELECT * FROM \"{}\".{} WHERE TEMP IS NOT NULL",
+                env.database, env.table
+            ),
+            "" => format!("SELECT * FROM \"{}\".{}", env.database, env.table),
+            _ => format!("SELECT * FROM \"{}\".{}", env.database, env.table),
         };
 
         // Realiza a consulta no Timestream
         let query = self.client.query(&query_string).await;
 
         // Converte o dado obtido no Timestream para o tipo criado no protofile IoTData,
-        // e adicionar esses valores em um vetor
+        // e adiciona esses valores em um vetor
         let mut data_list = Vec::new();
         for response in query {
             for row in response.rows {
@@ -52,7 +78,7 @@ impl IoTDataServices for IoTDataServicesImpl {
             }
         }
 
-        // Retornar o vetor como parte da resposta do gRPC
+        // Retorna o vetor como parte da resposta do gRPC
         Ok(Response::new(ListIoTDataResponse { data: data_list }))
     }
 }

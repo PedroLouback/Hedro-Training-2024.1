@@ -39,7 +39,9 @@ impl AWSConnection {
             let response = client.query().query_string(query_string).send().await?;
             Ok(response)
         } else {
-            Err("Não conectado ao Timestream".into())
+            Err("
+            Not connected to Timestream"
+                .into())
         }
     }
 }

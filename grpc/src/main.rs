@@ -5,13 +5,14 @@ pub mod server {
 mod infra;
 mod services;
 
-use log::info;
-use std::error::Error;
+use log::{error, info};
+use std::{env, error::Error};
 
 use tonic::transport::Server;
 
 use crate::{
-    infra::aws_timestream::AWSConnection, server::io_t_data_services_server::IoTDataServicesServer, services::data_services::IoTDataServicesImpl
+    infra::aws_timestream::AWSConnection, server::io_t_data_services_server::IoTDataServicesServer,
+    services::data_services::IoTDataServicesImpl,
 };
 
 #[tokio::main]
@@ -19,7 +20,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     dotenvy::dotenv().expect("failure to read .env");
     env_logger::init();
 
-    let addr = "0.0.0.0:50051".parse()?;
+    let env = match envs() {
+        Ok(env) => env,
+        Err(_) => return Err("Failed to read .env".into()),
+    };
+    let addr = format!("{}:{}", env.host, env.port).parse()?;
 
     info!("Starting gRPC server");
 
@@ -37,4 +42,23 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
 
     Ok(())
+}
+
+struct Configs {
+    host: String,
+    port: String,
+}
+
+fn envs() -> Result<Configs, ()> {
+    let Ok(host) = env::var("ADDRESS_HOST") else {
+        error!("Failed to read ADDRESS_HOST env");
+        return Err(());
+    };
+
+    let Ok(port) = env::var("ADDRESS_PORT") else {
+        error!("Failed to read ADDRESS_PORT env");
+        return Err(());
+    };
+
+    Ok(Configs { host, port })
 }
